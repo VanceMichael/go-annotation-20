@@ -121,13 +121,15 @@ func (im *Importer) ImportShards(paths []string, stagingDir string, at func() ti
 	sort.Strings(sorted)
 
 	for _, path := range sorted {
-		tmpPath, f, serr := stage(path, stagingDir)
-		if serr != nil {
-			return rep, serr
-		}
-		defer os.Remove(tmpPath)
-		defer f.Close()
-		shard, err := parseShard(f)
+		shard, err := func() (Shard, error) {
+			tmpPath, f, serr := stage(path, stagingDir)
+			if serr != nil {
+				return Shard{}, serr
+			}
+			defer os.Remove(tmpPath)
+			defer f.Close()
+			return parseShard(f)
+		}()
 		if err != nil {
 			return rep, err
 		}
